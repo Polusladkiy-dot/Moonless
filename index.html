@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moonless — Архитектура внимания</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        bg: '#EAEBEF',
+                        dark: '#111111',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { overflow-x: hidden; }
+
+        .spin-slow { animation: spin 25s linear infinite; }
+        .spin-slow-reverse { animation: spin-reverse 35s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes spin-reverse { from { transform: rotate(360deg); } to { transform: rotate(0deg); } }
+
+        @media (min-width: 768px) {
+            .bug-card.expanded {
+                width: 420px !important;
+                background-color: white;
+            }
+            .bug-card.expanded .card-content {
+                opacity: 1 !important;
+            }
+            .bug-card.expanded .card-title-collapsed {
+                opacity: 0 !important;
+            }
+        }
+    </style>
+</head>
+<body class="font-sans antialiased text-dark bg-white selection:bg-dark selection:text-white md:p-0">
+
+    <div id="android-modal" class="fixed inset-0 z-[100] hidden pointer-events-none flex items-center justify-center">
+        <div id="pixel-grid" class="absolute inset-0 grid grid-cols-10 grid-rows-10 z-10 pointer-events-none"></div>
+
+        <div id="modal-content" class="relative z-20 w-[90%] max-w-[500px] bg-dark text-white p-12 md:p-16 flex flex-col items-center justify-center opacity-0 scale-95 transition-all duration-700 ease-out pointer-events-auto border-[3px] border-white/10 shadow-2xl">
+            <button id="close-modal" class="absolute top-6 right-6 text-white/40 hover:text-white hover:rotate-90 transition-all duration-300">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
+
+            <div class="w-32 h-32 rounded-full bg-gradient-to-tr from-gray-700 via-gray-300 to-white animate-pulse blur-[1px] mb-8 shadow-[0_0_40px_rgba(255,255,255,0.2)]"></div>
+
+            <span class="text-[10px] font-bold tracking-[0.2em] text-white/40 mb-4 uppercase">System Update</span>
+            <h3 class="text-3xl md:text-5xl font-black uppercase tracking-tighter text-center mb-6">Moonless<br>Android</h3>
+            <p class="text-xs md:text-sm font-bold tracking-widest text-center text-white/70 uppercase leading-relaxed max-w-[300px]">
+                Мобильный экзоскелет находится в стадии компиляции.
+            </p>
+            <div class="mt-8 px-6 py-3 border-[1px] border-white/20 text-[10px] tracking-widest uppercase text-white/50">
+                Ожидайте релиза
+            </div>
+        </div>
+    </div>
+
+    <div id="scroll-track" class="hidden md:block w-full"></div>
+
+    <div class="md:fixed md:top-6 md:left-6 md:right-6 md:bottom-6 z-10 md:h-[calc(100vh-3rem)] md:w-[calc(100vw-3rem)] bg-bg border-[3px] border-dark md:rounded-[2.5rem] overflow-hidden">
+        
+        <header class="absolute top-0 left-0 w-full px-6 md:px-12 py-8 z-50 flex justify-between items-center bg-bg/90 md:bg-transparent backdrop-blur-md md:backdrop-blur-none border-b-[3px] md:border-b-0 border-dark pointer-events-none transition-colors">
+            <div class="flex items-center gap-3 pointer-events-auto">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="text-dark">
+                    <path d="M12 2L2 22h20L12 2z" stroke-linejoin="round"/>
+                </svg>
+                <span class="text-sm font-black tracking-[0.2em] uppercase mt-1">Moonless</span>
+            </div>
+            
+            <button class="flex flex-col gap-[6px] w-10 hover:gap-[8px] transition-all pointer-events-auto group">
+                <span class="w-full h-[2px] bg-dark group-hover:bg-dark/50 transition-colors"></span>
+                <span class="w-full h-[2px] bg-dark group-hover:bg-dark/50 transition-colors"></span>
+            </button>
+        </header>
+
+        <main id="horizontal-container" class="flex flex-col md:flex-row w-full md:w-max h-auto md:h-full pt-[88px] md:pt-0 will-change-transform bg-bg">
+            
+            <section class="w-full md:w-[calc(100vw-3rem)] shrink-0 relative flex flex-col justify-center px-6 md:px-12 pb-12 pt-12 md:pt-24 min-h-[85vh] md:min-h-full">
+                
+                <div class="absolute inset-0 flex flex-col justify-center items-center z-0 pointer-events-none overflow-hidden" aria-hidden="true">
+                    <div class="text-[26vw] font-black leading-[0.76] tracking-tighter text-white select-none w-full text-left pl-4 md:pl-12">MOON</div>
+                    <div class="text-[26vw] font-black leading-[0.76] tracking-tighter text-white select-none w-full text-right pr-4 md:pr-12">LESS</div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-8 relative z-10 w-full h-full items-center">
+                    <div class="col-span-1 md:col-span-4 flex flex-col">
+                        <span class="text-[10px] font-bold tracking-widest mb-8 md:mb-12 block">01/04</span>
+                        <h1 class="text-5xl md:text-[5.5rem] font-black leading-[0.85] tracking-tighter uppercase">ЭКЗО<br>СКЕЛЕТ<br>ДЛЯ<br>РАЗУМА</h1>
+                        <div class="mt-12 md:mt-16 flex items-center gap-5">
+                            <button id="android-trigger" class="w-14 h-14 shrink-0 border-[2px] border-dark rounded-full flex items-center justify-center hover:bg-dark hover:text-white transition-all duration-300 group">
+                                <svg class="w-6 h-6 group-hover:rotate-45 transition-transform duration-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                            </button>
+                            <p class="text-[10px] font-bold leading-[1.6] uppercase tracking-widest max-w-[200px]">ОЧИСТИТЕ<br>ПРОСТРАНСТВО ОТ<br>ВЫЧИСЛИТЕЛЬНОГО<br>ХАОСА.</p>
+                        </div>
+                    </div>
+
+                    <div class="col-span-1 md:col-span-5 flex justify-center items-center relative py-12 md:py-0">
+                        <div class="w-full max-w-[300px] md:max-w-[420px] aspect-square flex items-center justify-center relative z-20 group">
+                            <div class="absolute w-[110%] h-[110%] border-[1px] border-dark rounded-full border-dashed opacity-50 spin-slow"></div>
+                            <div class="absolute w-[75%] h-[75%] border-[1px] border-dark rounded-full spin-slow-reverse">
+                                <div class="absolute top-0 left-1/2 w-2 h-2 bg-dark rounded-full -translate-x-1/2 -translate-y-1/2"></div>
+                            </div>
+                            <div class="absolute w-[50%] h-[50%] border-[1px] border-dark rounded-full spin-slow">
+                                <div class="absolute bottom-0 left-1/2 w-1.5 h-1.5 bg-dark rounded-full -translate-x-1/2 translate-y-1/2"></div>
+                            </div>
+                            <a href="https://github.com/Polusladkiy-dot/Moonless/releases/download/v1.0/Moonless.zip" download class="w-[32%] h-[32%] bg-dark rounded-full flex items-center justify-center text-white text-[10px] md:text-[11px] font-black tracking-[0.2em] uppercase hover:scale-110 hover:bg-white hover:text-dark border-[2px] border-dark transition-all duration-300 z-30 relative shadow-2xl">
+                                Скачать
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="col-span-1 md:col-span-3 flex flex-col justify-start h-full pt-0 md:pt-12 md:pl-12">
+                        <div class="flex flex-col gap-8 w-full border-t-[3px] md:border-t-0 border-dark pt-6 md:pt-0">
+                            <ul class="flex flex-col space-y-4 text-[10px] uppercase font-bold tracking-[0.2em] w-full">
+                                <li class="flex items-center w-full"><span class="whitespace-nowrap pr-4">АРХИТЕКТУРА</span><div class="flex-grow border-t-[1px] border-dark/30"></div></li>
+                                <li class="flex items-center w-full"><span class="whitespace-nowrap pr-4">ДЕКОМПОЗИЦИЯ</span><div class="flex-grow border-t-[1px] border-dark/30"></div></li>
+                                <li class="flex items-center w-full"><span class="whitespace-nowrap pr-4">ФОКУС</span><div class="flex-grow border-t-[1px] border-dark/30"></div></li>
+                            </ul>
+                            <ul class="space-y-4 text-[10px] uppercase tracking-[0.2em] text-dark/70 font-black">
+                                <li>V. 1.0.0</li><li>OFFLINE CORE</li><li>SYSTEMATIC</li>
+                            </ul>
+                        </div>
+                        <div class="mt-auto pt-12 hidden md:block">
+                            <p class="text-[10px] font-bold leading-[1.6] uppercase tracking-widest">МОЗГ ВЫПОЛНЯЕТ ИСКЛЮЧИТЕЛЬНО ФУНКЦИЮ<br>ФИЛЬТРАЦИИ. ВСЁ ОСТАЛЬНОЕ — АЛГОРИТМЫ.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="flex flex-col md:flex-row shrink-0 h-auto md:h-full border-t-[3px] md:border-t-0 md:border-l-[3px] border-dark">
+                <div class="w-full md:w-[350px] lg:w-[450px] p-8 md:p-12 bg-dark text-white flex flex-col justify-between shrink-0">
+                    <span class="text-[10px] font-bold tracking-[0.2em] mb-12 text-gray-400 uppercase">02 — Баги системы</span>
+                    <h2 class="text-4xl md:text-5xl lg:text-6xl font-black leading-[0.9] tracking-tighter uppercase break-words hyphens-auto mt-auto">
+                        Баги<br>нашего<br>мозга
+                    </h2>
+                </div>
+                
+                <div class="bug-card group w-full md:w-[100px] shrink-0 border-t-[3px] md:border-t-0 md:border-l-[3px] border-dark bg-bg relative overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] md:flex md:flex-col items-center justify-center">
+                    <span class="text-[7rem] font-black text-dark/5 absolute -top-6 md:top-auto md:bottom-12 md:left-1/2 md:-translate-x-1/2 -right-2 md:right-auto pointer-events-none transition-all duration-700 md:text-dark/20 z-0">1</span>
+                    <div class="card-title-collapsed hidden md:block absolute top-[40%] left-1/2 -translate-x-1/2 -translate-y-1/2 -rotate-90 whitespace-nowrap font-black uppercase tracking-[0.15em] text-dark/40 transition-opacity duration-300 text-lg">
+                        Иллюзия сложности
+                    </div>
+                    <div class="card-content w-full md:w-[420px] p-8 md:p-12 md:opacity-0 transition-opacity duration-500 delay-200 flex flex-col justify-center h-full relative z-10 pointer-events-none md:pointer-events-auto">
+                        <h3 class="text-xl md:text-2xl font-black uppercase tracking-widest mb-6">Иллюзия сложности</h3>
+                        <p class="text-sm md:text-base font-bold leading-relaxed tracking-wider text-dark/80">
+                            Биологический ресурс принятия решений строго ограничен. Мозг тратит идентичный объем энергии на сопоставление рутинных альтернатив и на формирование стратегий. Сложность выбора истощает систему независимо от масштаба последствий.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="bug-card group w-full md:w-[100px] shrink-0 border-t-[3px] md:border-t-0 md:border-l-[3px] border-dark bg-bg relative overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] md:flex md:flex-col items-center justify-center">
+                    <span class="text-[7rem] font-black text-dark/5 absolute -top-6 md:top-auto md:bottom-12 md:left-1/2 md:-translate-x-1/2 -right-2 md:right-auto pointer-events-none transition-all duration-700 md:text-dark/20 z-0">2</span>
+                    <div class="card-title-collapsed hidden md:block absolute top-[40%] left-1/2 -translate-x-1/2 -translate-y-1/2 -rotate-90 whitespace-nowrap font-black uppercase tracking-[0.15em] text-dark/40 transition-opacity duration-300 text-lg">
+                        Паралич ожидания
+                    </div>
+                    <div class="card-content w-full md:w-[420px] p-8 md:p-12 md:opacity-0 transition-opacity duration-500 delay-200 flex flex-col justify-center h-full relative z-10 pointer-events-none md:pointer-events-auto">
+                        <h3 class="text-xl md:text-2xl font-black uppercase tracking-widest mb-6">Паралич ожидания</h3>
+                        <p class="text-sm md:text-base font-bold leading-relaxed tracking-wider text-dark/80">
+                            Запланированные, но не реализованные события блокируют ресурс. Мозг переходит в фоновый режим удержания информации, физически парализуя текущую продуктивность до наступления ожидаемого момента.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="bug-card group w-full md:w-[100px] shrink-0 border-t-[3px] md:border-t-0 md:border-l-[3px] border-dark bg-bg relative overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] md:flex md:flex-col items-center justify-center">
+                    <span class="text-[7rem] font-black text-dark/5 absolute -top-6 md:top-auto md:bottom-12 md:left-1/2 md:-translate-x-1/2 -right-2 md:right-auto pointer-events-none transition-all duration-700 md:text-dark/20 z-0">3</span>
+                    <div class="card-title-collapsed hidden md:block absolute top-[40%] left-1/2 -translate-x-1/2 -translate-y-1/2 -rotate-90 whitespace-nowrap font-black uppercase tracking-[0.15em] text-dark/40 transition-opacity duration-300 text-lg">
+                        Информационный шум
+                    </div>
+                    <div class="card-content w-full md:w-[420px] p-8 md:p-12 md:opacity-0 transition-opacity duration-500 delay-200 flex flex-col justify-center h-full relative z-10 pointer-events-none md:pointer-events-auto">
+                        <h3 class="text-xl md:text-2xl font-black uppercase tracking-widest mb-6">Информационный шум</h3>
+                        <p class="text-sm md:text-base font-bold leading-relaxed tracking-wider text-dark/80">
+                            Данные, не требующие немедленного действия — это фактор износа. Они генерируют отклик, расходуя ресурс, но оставляют реальность неизменной. Ключевая информация не оставляет пространства для бездействия.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="flex flex-col md:flex-row shrink-0 h-auto md:h-full border-t-[3px] md:border-t-0 md:border-l-[3px] border-dark">
+                <div class="w-full md:w-[350px] lg:w-[450px] p-8 md:p-12 flex flex-col justify-between shrink-0 bg-white">
+                    <span class="text-[10px] font-bold tracking-[0.2em] mb-12 uppercase">03 — Синхронизация потока</span>
+                    <h2 class="text-4xl md:text-5xl lg:text-[4rem] font-black leading-[0.85] tracking-tighter uppercase break-words mt-auto">
+                        Алгоритм<br>снижения<br>нагрузки.
+                    </h2>
+                    <div class="mt-12 md:mt-24">
+                        <p class="text-[10px] uppercase tracking-[0.25em] font-black text-dark/60">SYSTEM FLOW</p>
+                    </div>
+                </div>
+                
+                <div class="flex flex-col md:flex-row h-full w-full md:w-max">
+                    <div class="w-full md:w-[350px] lg:w-[400px] shrink-0 border-t-[3px] md:border-t-0 md:border-l-[3px] border-dark flex flex-col h-auto md:h-full bg-bg hover:bg-white transition-colors duration-500">
+                        <div class="h-auto md:h-[45%] lg:h-[55%] bg-dark flex items-center justify-center p-8 border-b-[3px] border-dark relative overflow-hidden group">
+                            <span class="text-[5rem] md:text-[8rem] font-black text-white/20 leading-none group-hover:scale-110 transition-transform duration-500">I</span>
+                        </div>
+                        <div class="p-8 md:p-12 h-auto md:h-[55%] lg:h-[45%] flex flex-col justify-center">
+                            <h4 class="text-xl md:text-2xl font-black uppercase tracking-[0.15em] mb-4 md:mb-6">Сортировка</h4>
+                            <p class="text-base md:text-lg font-bold tracking-wider leading-relaxed text-dark/80">Мозг выполняет исключительно функцию фильтрации. Всё, что не является ключевой информацией, отсекается.</p>
+                        </div>
+                    </div>
+
+                    <div class="w-full md:w-[350px] lg:w-[400px] shrink-0 border-t-[3px] md:border-t-0 md:border-l-[3px] border-dark flex flex-col h-auto md:h-full bg-bg hover:bg-white transition-colors duration-500">
+                        <div class="h-auto md:h-[45%] lg:h-[55%] bg-dark flex items-center justify-center p-8 border-b-[3px] border-dark relative overflow-hidden group">
+                            <span class="text-[5rem] md:text-[8rem] font-black text-white/20 leading-none group-hover:scale-110 transition-transform duration-500">II</span>
+                        </div>
+                        <div class="p-8 md:p-12 h-auto md:h-[55%] lg:h-[45%] flex flex-col justify-center">
+                            <h4 class="text-xl md:text-2xl font-black uppercase tracking-[0.15em] mb-4 md:mb-6">Аутсорс</h4>
+                            <p class="text-base md:text-lg font-bold tracking-wider leading-relaxed text-dark/80">Информация выгружается в систему. Незакрытые циклы больше не требуют удержания в оперативной памяти.</p>
+                        </div>
+                    </div>
+
+                    <div class="w-full md:w-[350px] lg:w-[400px] shrink-0 border-t-[3px] md:border-t-0 md:border-l-[3px] border-dark flex flex-col h-auto md:h-full bg-bg hover:bg-white transition-colors duration-500">
+                        <div class="h-auto md:h-[45%] lg:h-[55%] bg-dark flex items-center justify-center p-8 border-b-[3px] border-dark relative overflow-hidden group">
+                            <span class="text-[5rem] md:text-[8rem] font-black text-white/20 leading-none group-hover:scale-110 transition-transform duration-500">III</span>
+                        </div>
+                        <div class="p-8 md:p-12 h-auto md:h-[55%] lg:h-[45%] flex flex-col justify-center">
+                            <h4 class="text-xl md:text-2xl font-black uppercase tracking-[0.15em] mb-4 md:mb-6">Декомпозиция</h4>
+                            <p class="text-base md:text-lg font-bold tracking-wider leading-relaxed text-dark/80">Монолитные цели разбиваются на атомарные действия. Система берет на себя структуру процесса.</p>
+                        </div>
+                    </div>
+
+                    <div class="w-full md:w-[350px] lg:w-[400px] shrink-0 border-t-[3px] md:border-t-0 md:border-l-[3px] border-dark flex flex-col h-auto md:h-full bg-bg hover:bg-white transition-colors duration-500">
+                        <div class="h-auto md:h-[45%] lg:h-[55%] bg-dark flex items-center justify-center p-8 border-b-[3px] border-dark relative overflow-hidden group">
+                            <span class="text-[5rem] md:text-[8rem] font-black text-white/20 leading-none group-hover:scale-110 transition-transform duration-500">IV</span>
+                        </div>
+                        <div class="p-8 md:p-12 h-auto md:h-[55%] lg:h-[45%] flex flex-col justify-center">
+                            <h4 class="text-xl md:text-2xl font-black uppercase tracking-[0.15em] mb-4 md:mb-6">Исполнение</h4>
+                            <p class="text-base md:text-lg font-bold tracking-wider leading-relaxed text-dark/80">Вместо массива задач система выдаёт одно действие в единицу времени, устраняя перегрузку выбора.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="w-full md:w-[calc(100vw-3rem)] shrink-0 h-auto md:h-full bg-dark text-white flex flex-col items-center justify-center px-6 py-24 md:py-0 relative overflow-hidden border-t-[3px] md:border-t-0 md:border-l-[3px] border-dark">
+                <div class="absolute inset-0 flex items-center justify-center opacity-[0.02] pointer-events-none select-none">
+                    <span class="text-[120vw] md:text-[60vw] font-black leading-none">M</span>
+                </div>
+                <span class="text-[10px] font-bold tracking-[0.2em] text-gray-500 mb-8 uppercase relative z-10">04 — Инициация</span>
+                <h2 class="text-5xl md:text-7xl lg:text-[6rem] font-black tracking-tighter uppercase leading-[0.85] mb-10 relative z-10 text-center">
+                    Ключевая информация<br>требует действия.
+                </h2>
+                <p class="text-xs md:text-sm font-bold max-w-xl mb-12 text-gray-400 relative z-10 uppercase tracking-widest leading-relaxed text-center">
+                    Оставьте рутинные вычисления системе. Фокусируйтесь на том, что действительно меняет реальность. Ваш следующий шаг очевиден.
+                </p>
+                <a href="https://github.com/Polusladkiy-dot/Moonless/releases/download/v1.0/Moonless.zip" download class="bg-bg text-dark text-sm md:text-base font-black tracking-widest uppercase px-10 py-6 md:px-14 md:py-8 hover:bg-white hover:scale-105 transition-all duration-300 relative z-10 border-[2px] border-transparent hover:border-dark shadow-2xl">
+                    Интегрировать Moonless
+                </a>
+            </section>
+
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            // --- ГОРИЗОНТАЛЬНЫЙ СКРОЛЛ ---
+            const track = document.getElementById('scroll-track');
+            const container = document.getElementById('horizontal-container');
+            const cards = document.querySelectorAll('.bug-card');
+
+            function updateScroll() {
+                if (window.innerWidth >= 768) {
+                    const scrollMax = container.scrollWidth - window.innerWidth + 48;
+                    track.style.height = `${scrollMax + window.innerHeight}px`;
+                    
+                    const scrollY = window.scrollY;
+                    container.style.transform = `translate3d(-${scrollY}px, 0, 0)`;
+
+                    cards.forEach(card => {
+                        const rect = card.getBoundingClientRect();
+                        if (rect.left < window.innerWidth * 0.65) {
+                            card.classList.add('expanded');
+                        } else {
+                            card.classList.remove('expanded');
+                        }
+                    });
+                } else {
+                    track.style.height = '0px';
+                    container.style.transform = 'none';
+                    cards.forEach(card => card.classList.remove('expanded'));
+                }
+            }
+
+            window.addEventListener('scroll', updateScroll);
+            window.addEventListener('resize', updateScroll);
+            setTimeout(updateScroll, 100); 
+
+            // --- ПИКСЕЛЬНОЕ МОДАЛЬНОЕ ОКНО ---
+            const androidBtn = document.getElementById('android-trigger');
+            const modal = document.getElementById('android-modal');
+            const pixelGrid = document.getElementById('pixel-grid');
+            const modalContent = document.getElementById('modal-content');
+            const closeModal = document.getElementById('close-modal');
+
+            // Создаем 100 блоков (10x10)
+            for (let i = 0; i < 100; i++) {
+                const block = document.createElement('div');
+                block.className = 'bg-dark opacity-0 transition-opacity duration-[150ms] ease-out';
+                pixelGrid.appendChild(block);
+            }
+            const blocks = Array.from(pixelGrid.children);
+
+            function openModal() {
+                modal.classList.remove('hidden');
+                setTimeout(() => modal.classList.add('pointer-events-auto', 'bg-dark/50'), 10);
+                
+                // Перемешиваем блоки для хаотичного появления
+                const shuffledBlocks = [...blocks].sort(() => 0.5 - Math.random());
+                
+                shuffledBlocks.forEach((block, index) => {
+                    setTimeout(() => {
+                        block.classList.remove('opacity-0');
+                        block.classList.add('opacity-100');
+                    }, index * 8); // Скорость закрашивания
+                });
+
+                // Когда экран "закрашен", показываем контент и убираем пиксели
+                setTimeout(() => {
+                    modalContent.classList.remove('opacity-0', 'scale-95');
+                    modalContent.classList.add('opacity-100', 'scale-100');
+                    
+                    shuffledBlocks.forEach((block, index) => {
+                        setTimeout(() => {
+                            block.classList.remove('opacity-100');
+                            block.classList.add('opacity-0');
+                        }, index * 8);
+                    });
+                }, 900); // Ждем пока закрасится весь экран
+            }
+
+            function closeMod() {
+                modalContent.classList.remove('opacity-100', 'scale-100');
+                modalContent.classList.add('opacity-0', 'scale-95');
+                modal.classList.remove('bg-dark/50');
+                
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                    modal.classList.remove('pointer-events-auto');
+                }, 500);
+            }
+
+            androidBtn.addEventListener('click', openModal);
+            closeModal.addEventListener('click', closeMod);
+        });
+    </script>
+</body>
+</html>
